@@ -8,6 +8,8 @@ import Json.Decode exposing (Decoder, field, string, int, list, andThen)
 import Time exposing (Posix, Weekday(..), Zone, utc, toWeekday)
 import Iso8601
 
+import Week
+
 
 -- MAIN
 
@@ -28,21 +30,23 @@ main =
 type alias Model =
   { pos: LatLng
   , dataURL: String
-  , forecast: Maybe Forecast
+  , today: Weekday
+  , forecast: Forecast
   , error: String
   }
 
 
-type alias Forecast =
-  { first: Weekday 
-  , mon: Int
-  , tue: Int
-  , wed: Int
-  , thu: Int
-  , fri: Int
-  , sat: Int
-  , sun: Int
-  }
+
+
+init : () -> (Model, Cmd Msg)
+init _ =
+  ( { pos = lawrence
+    , dataURL = ""
+    , today = Fri
+    , forecast = []
+    , error = ""
+    }
+  , getNWSPoint lawrence)
 
 
 maxOfDay : Zone -> Weekday -> List RainProb -> Int
@@ -59,31 +63,15 @@ maxOfDay zone day probs =
       Nothing -> 0
 
 
-build : Zone -> Weekday -> List RainProb -> Forecast
-build zone first probs =
+build : Zone -> List RainProb -> Forecast
+build zone probs =
   let
     maxOf = maxOfDay zone
+    foldFn day forecast =
+      forecast ++ [ (day, maxOf day probs) ]
+
   in
-    { first = first
-    , mon = maxOf Mon probs
-    , tue = maxOf Tue probs
-    , wed = maxOf Wed probs
-    , thu = maxOf Thu probs
-    , fri = maxOf Fri probs
-    , sat = maxOf Sat probs
-    , sun = maxOf Sun probs
-    }
-
-
-init : () -> (Model, Cmd Msg)
-init _ =
-  ( { pos = lawrence
-    , dataURL = ""
-    , forecast = Nothing
-    , error = ""
-    }
-  , getNWSPoint lawrence)
-
+    List.foldl foldFn [] Week.days
 
 
 -- UPDATE
@@ -146,22 +134,18 @@ view model =
     ]
 
 
-viewForecast : Maybe Forecast -> Html Msg
+viewForecast : Forecast -> Html Msg
 viewForecast fc =
-  case fc of
-    Just f ->
-      div []
-        [ p [] [ text ( "Mon: " ++ String.fromInt f.mon ) ]
-        , p [] [ text ( "Tue: " ++ String.fromInt f.tue ) ]
-        , p [] [ text ( "Wed: " ++ String.fromInt f.wed ) ]
-        , p [] [ text ( "Thu: " ++ String.fromInt f.thu ) ]
-        , p [] [ text ( "Fri: " ++ String.fromInt f.fri ) ]
-        , p [] [ text ( "Sat: " ++ String.fromInt f.sat ) ]
-        , p [] [ text ( "Sun: " ++ String.fromInt f.sun ) ]
-        ]
+  div []
+    [ p [] [ text ( "Mon: " ++ String.fromInt f.mon ) ]
+    , p [] [ text ( "Tue: " ++ String.fromInt f.tue ) ]
+    , p [] [ text ( "Wed: " ++ String.fromInt f.wed ) ]
+    , p [] [ text ( "Thu: " ++ String.fromInt f.thu ) ]
+    , p [] [ text ( "Fri: " ++ String.fromInt f.fri ) ]
+    , p [] [ text ( "Sat: " ++ String.fromInt f.sat ) ]
+    , p [] [ text ( "Sun: " ++ String.fromInt f.sun ) ]
+    ]
     
-    Nothing -> div [] []
-
 
 -- HTTP
 
@@ -200,40 +184,26 @@ pointsDecoder =
 
 
 -- from the slack <3
-{-
-sufixDateDecoder : Decoder Posix
-sufixDateDecoder =
-    let
-        fn str =
-            case Iso8601.toTime (String.slice 0 -5 str) of
-                Ok value ->
-                    Json.succeed value
-
-                Err err ->
-                    Json.fail "not a date I can understand"
-    in
-    Json.andThen fn Json.string
-
-dateDecoder : Decoder Posix
-dateDecoder =
-    Json.oneOf
-        [ sufixDateDecoder
-        , Json.succeed (Time.millisToPosix 0)
-        ]-}
-
-
 dateDecoder : Decoder Posix
 dateDecoder =
   let
-    toTime = \s ->
-      case Iso8601.toTime s of
-        Ok p -> p
-        Err e -> Time.millisToPosix 0
-    
-    fn = \s -> String.slice 0 -5 s |> toTime
+    clean str =
+      str |> String.split "/" |> List.head
 
+    fn str =
+      case clean str of
+        Just s ->
+          case Iso8601.toTime s of
+            Ok value ->
+              Json.Decode.succeed value
+
+            Err err ->
+              Json.Decode.fail "Not a date I can understand"
+        
+        Nothing ->
+          Json.Decode.fail "Not a date I can understand"
   in
-    Json.Decode.map fn string
+    Json.Decode.andThen fn Json.Decode.string
 
 
 rainProbDecoder : Decoder RainProb
