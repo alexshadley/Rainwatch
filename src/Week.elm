@@ -6,10 +6,11 @@ import List.Extra exposing (splitWhen)
 
 days = [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
 
-daysAt : Weekday -> List Weekday
-daysAt d =
+daysFrom : Weekday -> List Weekday
+daysFrom d =
   case splitWhen (\a -> a == d) days of
-    Just (a, b) -> 
+    Just (a, b) -> b ++ a
+    Nothing     -> []
 
 
 nextInList : List a -> a -> Maybe a

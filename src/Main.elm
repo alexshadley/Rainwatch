@@ -130,13 +130,18 @@ view model =
     , button [ onClick GetPoint ] [ text "get data!" ]
     , p [] [ text model.dataURL ]
     , p [] [ text ( model.error ) ]
-    , viewForecast model.forecast
+    , viewForecast model.today model.forecast
     ]
 
 
-viewForecast : Forecast -> Html Msg
-viewForecast fc =
+viewForecast : Weekday -> Forecast -> Html Msg
+viewForecast today fc =
+  let
+    days = Week.daysFrom today
   div []
+    [ 
+
+    ]
     [ p [] [ text ( "Mon: " ++ String.fromInt f.mon ) ]
     , p [] [ text ( "Tue: " ++ String.fromInt f.tue ) ]
     , p [] [ text ( "Wed: " ++ String.fromInt f.wed ) ]

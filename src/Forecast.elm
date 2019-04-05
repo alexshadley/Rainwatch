@@ -14,7 +14,7 @@ empty = Forecast []
 
 extend : Weekday -> Int -> Forecast -> Forecast
 extend d p (Forecast fs) =
-  Forecast ( fs ++ [ (d, p) ] )
+  Forecast ( [(d, p)] ++ fs )
 
 prob : Forecast -> Weekday -> Int
 prob (Forecast fs) day =
