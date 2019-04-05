@@ -1,4 +1,4 @@
-module Forecast exposing (Forecast, empty, extend, dump)
+module Forecast exposing (Forecast, empty, extend, dumpWeek)
 
 import Time exposing (Weekday(..))
 import Maybe exposing (withDefault)
@@ -24,5 +24,9 @@ prob (Forecast fs) day =
     |> head
     |> withDefault 0
   
-dump : Forecast -> List (Weekday, Float)
-dump (Forecast fc) = fc
+dumpWeek : Weekday -> Forecast -> List (Weekday, Float)
+dumpWeek today f =
+  let
+    days = Week.daysFrom today
+  in
+    List.map (\d -> (d, prob f d) ) days

@@ -4,11 +4,13 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import List exposing (map, filter)
-import Json.Decode exposing (Decoder, field, string, int, list, andThen)
+import Json.Decode exposing (Decoder, field, string, float, list, andThen)
 import Time exposing (Posix, Weekday(..), Zone, utc, toWeekday)
 import Iso8601
 
 import Week
+import Forecast exposing (Forecast)
+import Rainchart exposing (build)
 
 
 -- MAIN
@@ -43,13 +45,13 @@ init _ =
   ( { pos = lawrence
     , dataURL = ""
     , today = Fri
-    , forecast = []
+    , forecast = Forecast.empty
     , error = ""
     }
   , getNWSPoint lawrence)
 
 
-maxOfDay : Zone -> Weekday -> List RainProb -> Int
+maxOfDay : Zone -> Weekday -> List RainProb -> Float
 maxOfDay zone day probs =
   let
     max =
@@ -67,11 +69,11 @@ build : Zone -> List RainProb -> Forecast
 build zone probs =
   let
     maxOf = maxOfDay zone
-    foldFn day forecast =
-      forecast ++ [ (day, maxOf day probs) ]
+    foldFn day fc =
+      Forecast.extend day (maxOf day probs) fc
 
   in
-    List.foldl foldFn [] Week.days
+    List.foldl foldFn Forecast.empty Week.days
 
 
 -- UPDATE
@@ -101,9 +103,9 @@ update msg model =
       case result of
         Ok probs ->
           let
-            newForecast = build utc Mon probs
+            newForecast = build utc probs
           in
-          ({ model | forecast = Just newForecast}, Cmd.none)
+          ({ model | forecast = newForecast}, Cmd.none)
         
         Err e ->
           ({ model | error = (Debug.toString e) }, Cmd.none)
@@ -130,27 +132,9 @@ view model =
     , button [ onClick GetPoint ] [ text "get data!" ]
     , p [] [ text model.dataURL ]
     , p [] [ text ( model.error ) ]
-    , viewForecast model.today model.forecast
+    , Rainchart.build model.today model.forecast
     ]
 
-
-viewForecast : Weekday -> Forecast -> Html Msg
-viewForecast today fc =
-  let
-    days = Week.daysFrom today
-  div []
-    [ 
-
-    ]
-    [ p [] [ text ( "Mon: " ++ String.fromInt f.mon ) ]
-    , p [] [ text ( "Tue: " ++ String.fromInt f.tue ) ]
-    , p [] [ text ( "Wed: " ++ String.fromInt f.wed ) ]
-    , p [] [ text ( "Thu: " ++ String.fromInt f.thu ) ]
-    , p [] [ text ( "Fri: " ++ String.fromInt f.fri ) ]
-    , p [] [ text ( "Sat: " ++ String.fromInt f.sat ) ]
-    , p [] [ text ( "Sun: " ++ String.fromInt f.sun ) ]
-    ]
-    
 
 -- HTTP
 
@@ -159,7 +143,7 @@ lawrence = Pos 38.9717 -95.2353
 
 type alias RainProb =
   { time: Posix
-  , probability: Int
+  , probability: Float
   }
 
 
@@ -215,7 +199,7 @@ rainProbDecoder : Decoder RainProb
 rainProbDecoder =
   Json.Decode.map2 (\t p -> {time=t,probability=p})
     (field "validTime" dateDecoder)
-    (field "value" int)
+    (field "value" float)
 
 
 weatherDecoder : Decoder (List RainProb)

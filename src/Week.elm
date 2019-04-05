@@ -1,4 +1,4 @@
-module Week exposing (next, prev, days)
+module Week exposing (next, prev, days, daysFrom)
 
 import Time exposing (Weekday(..))
 import List exposing (head, reverse)
