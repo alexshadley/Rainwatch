@@ -1,7 +1,8 @@
 import Browser
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (..)
+import Html.Styled.Events exposing (..)
 import Task
 import Http
 import List exposing (map, filter)
@@ -12,6 +13,7 @@ import Iso8601
 import Week
 import Forecast exposing (Forecast)
 import Rainchart exposing (build)
+import RainCss
 
 
 -- MAIN
@@ -128,18 +130,17 @@ subscriptions model =
   Sub.none
 
 
-
 -- VIEW
 
 
 view : Model -> Html Msg
 view model =
   div []
-    [ h2 [] [ text "Rainwatch" ]
+    [ h1 [css [RainCss.title]] [ text "Rainwatch" ]
     , button [ onClick GetPoint ] [ text "get data!" ]
     , p [] [ text model.dataURL ]
     , p [] [ text ( model.error ) ]
-    , Rainchart.build model.today model.forecast
+    {-, Rainchart.build model.today model.forecast]-}
     ]
 
 
