@@ -2,6 +2,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Task
 import Http
 import List exposing (map, filter)
 import Json.Decode exposing (Decoder, field, string, float, list, andThen)
@@ -33,6 +34,7 @@ type alias Model =
   { pos: LatLng
   , dataURL: String
   , today: Weekday
+  , timeZone: Zone
   , forecast: Forecast
   , error: String
   }
@@ -45,6 +47,7 @@ init _ =
   ( { pos = lawrence
     , dataURL = ""
     , today = Fri
+    , timeZone = utc
     , forecast = Forecast.empty
     , error = ""
     }
@@ -80,7 +83,8 @@ build zone probs =
 
 
 type Msg
-  = GetPoint
+  = GotTimeAndZone Posix Zone
+  | GetPoint
   | GotPoint (Result Http.Error String)
   | GotWeather (Result Http.Error (List RainProb))
 
@@ -88,13 +92,16 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    GotTimeAndZone time zone ->
+      ({model | today = Time.toWeekday zone time, timeZone = zone }, getWeatherData model.dataURL)
+
     GetPoint ->
       (model, getNWSPoint lawrence)
 
     GotPoint result ->
       case result of
         Ok url ->
-          ({ model | dataURL = url}, getWeatherData url)
+          ({ model | dataURL = url}, getTime)
 
         Err _ ->
           ({ model | dataURL = "ERROR!"}, Cmd.none)
@@ -103,7 +110,7 @@ update msg model =
       case result of
         Ok probs ->
           let
-            newForecast = build utc probs
+            newForecast = build model.timeZone probs
           in
           ({ model | forecast = newForecast}, Cmd.none)
         
@@ -136,6 +143,12 @@ view model =
     ]
 
 
+-- some funky manuvering here to get 2 task results into one message
+getTime : Cmd Msg
+getTime =
+  Task.map2 (\t z -> (t, z)) Time.now Time.here
+    |> Task.perform (\(t, z) -> GotTimeAndZone t z)
+
 -- HTTP
 
 type LatLng = Pos Float Float
@@ -153,8 +166,6 @@ getNWSPoint (Pos lat lng) =
     { url = "https://api.weather.gov/points/" ++ String.fromFloat lat ++ "," ++ String.fromFloat lng
     , expect = Http.expectJson GotPoint pointsDecoder
     }
-
-
 
 
 getWeatherData : String -> Cmd Msg
