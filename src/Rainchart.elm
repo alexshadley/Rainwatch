@@ -84,9 +84,9 @@ build today fc =
   in
     svg [ viewBox 0 0 w h ]
       [ style [] [ text """
-        .column rect { fill: rgba(118, 214, 78, 0.8); }
+        .column rect { fill: rgba(71, 120, 197, 0.8); }
         .column text { display: none; }
-        .column:hover rect { fill: rgb(118, 214, 78); }
+        .column:hover rect { fill: rgb(71, 120, 197); }
         .column:hover text { display: inline; }
       """ ]
       , g [ transform [ Translate (padding - 1) (h - padding) ] ]
