@@ -3,6 +3,7 @@ import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
+import Svg.Styled
 import Task
 import Http
 import List exposing (map, filter)
@@ -24,7 +25,7 @@ main =
     { init = init
     , update = update
     , subscriptions = subscriptions
-    , view = view
+    , view = view >> Html.Styled.toUnstyled
     }
 
 
@@ -136,11 +137,12 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ h1 [css [RainCss.title]] [ text "Rainwatch" ]
+    [ node "link" [ href "https://fonts.googleapis.com/css?family=Montserrat", rel "stylesheet" ] []
+    , h1 [css [RainCss.title]] [ text "Rainwatch" ]
     , button [ onClick GetPoint ] [ text "get data!" ]
     , p [] [ text model.dataURL ]
     , p [] [ text ( model.error ) ]
-    {-, Rainchart.build model.today model.forecast]-}
+    , Svg.Styled.fromUnstyled ( Rainchart.build model.today model.forecast )
     ]
 
 
