@@ -10,3 +10,10 @@ title =
     , fontStyle normal
     , textAlign center
     ]
+
+chartContainer : Style
+chartContainer =
+  Css.batch
+    [ width (pct 50) 
+    , margin auto
+    ]

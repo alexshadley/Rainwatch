@@ -6,7 +6,7 @@ import Axis
 import Scale exposing (BandConfig, BandScale, ContinuousScale, defaultBandConfig)
 import TypedSvg exposing (g, rect, style, svg, text_)
 import TypedSvg.Attributes exposing (class, textAnchor, transform, viewBox)
-import TypedSvg.Attributes.InPx exposing (height, width, x, y)
+import TypedSvg.Attributes.InPx exposing (height, width, x, y, fontSize)
 import TypedSvg.Core exposing (Svg, text)
 import TypedSvg.Types exposing (AnchorAlignment(..), Transform(..))
 
@@ -72,6 +72,7 @@ column scale (day, value) =
       [ x <| Scale.convert (Scale.toRenderable weekdayToString scale) day
       , y <| Scale.convert yScale value - 5
       , textAnchor AnchorMiddle
+      , fontSize 20
       ]
       [ text <| String.fromFloat value ]
     ]

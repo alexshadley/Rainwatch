@@ -142,7 +142,8 @@ view model =
     , button [ onClick GetPoint ] [ text "get data!" ]
     , p [] [ text model.dataURL ]
     , p [] [ text ( model.error ) ]
-    , Svg.Styled.fromUnstyled ( Rainchart.build model.today model.forecast )
+    , div [ css [RainCss.chartContainer] ]
+      [ Svg.Styled.fromUnstyled ( Rainchart.build model.today model.forecast ) ]
     ]
 
 
